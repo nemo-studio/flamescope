@@ -19,7 +19,7 @@
 
 from ..common import fileutil
 import os
-import re
+import gzip
 import collections
 from flask import abort
 from os import walk
@@ -72,12 +72,11 @@ def calculate_stack_range(filename):
         if mtime == stack_mtimes[path]:
             return stack_times[path]
 
-    # read .gz files via a "gunzip -c" pipe
     if filename.endswith(".gz"):
         try:
-            f = os.popen("gunzip -c " + path)
+            f = gzip.open(path, 'rt')
         except Exception:
-            print("ERROR: Can't gunzip -c stack file, %s." % path)
+            print("ERROR: Can't open gzipped file, %s." % path)
             f.close()
             return abort(500)
     else:
@@ -99,7 +98,7 @@ def calculate_stack_range(filename):
         # and makes a large difference.
         if (line[0] == '#' or line[0] == '\t'):
             continue
-        r = re.search(event_regexp, line)
+        r = event_regexp.search(line)
         if (r):
             ts = float(r.group(1))
             if ((linenum % index_factor) == 0):
@@ -174,12 +173,11 @@ def generate_stack(filename, range_start=None, range_end=None):
     if not fileutil.validpath(path):
         return abort(500)
 
-    # read .gz files via a "gunzip -c" pipe
     if filename.endswith(".gz"):
         try:
-            f = os.popen("gunzip -c " + path)
+            f = gzip.open(path, 'rt')
         except Exception:
-            print("ERROR: Can't gunzip -c stack file, %s." % path)
+            print("ERROR: Can't open gzipped file, %s." % path)
             f.close()
             return abort(500)
     else:
@@ -251,14 +249,14 @@ def generate_stack(filename, range_start=None, range_end=None):
         # makes a big difference.
         r = None
         if (line[0] != '\t'):
-            r = re.search(event_regexp, line)
+            r = event_regexp.search(line)
         if (r):
             if (stack):
                 # process prior stack
                 stackstr = ""
                 for pair in stack:
                     stackstr += pair[0] + ";"
-                if (re.search(idle_regexp, stackstr)):
+                if (idle_regexp.search(stackstr)):
                     # skip idle
                     stack = []
                 elif (ts >= start and ts <= end):
@@ -267,14 +265,14 @@ def generate_stack(filename, range_start=None, range_end=None):
             ts = float(r.group(1))
             if (ts > end + overscan):
                 break
-            r = re.search(comm_regexp, line)
+            r = comm_regexp.search(line)
             if (r):
                 comm = r.group(1).rstrip()
                 stack.append([comm, ""])
             else:
                 stack.append(["<unknown>", ""])
         else:
-            r = re.search(frame_regexp, line)
+            r = frame_regexp.search(line)
             if (r):
                 name = r.group(1)
                 # strip instruction offset (+0xfe200...)

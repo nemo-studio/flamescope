@@ -18,7 +18,7 @@
 
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { Dimmer, Loader, Divider, Button, Container, Modal, Dropdown, Label } from 'semantic-ui-react'
+import { Dimmer, Loader, Divider, Button, Container, Modal, Dropdown, Label, Checkbox } from 'semantic-ui-react'
 import { pushBreadcrumb, popBreadcrumb } from '../../actions/Navbar'
 import { connect } from 'react-redux'
 import { select } from 'd3-selection'
@@ -36,6 +36,12 @@ const styles = {
         fontWeight: 300,
         minHeight: '5em',
     },
+    enhanceToggle: {
+        top: '4px',
+    },
+    enhanceLabel: {
+        marginLeft: '8px',
+    }
 }
 
 const rowsOptions = [
@@ -132,6 +138,9 @@ class Heatmap extends Component {
 
         var ticks = Math.floor(width / 50)
 
+        var legendWidth = Math.min(width * 0.8, 400)
+        var legendTicks = legendWidth > 100 ? Math.floor(legendWidth / 50) : 2
+
         function onClick(d, i, j) {
             rangeSelect([i, j])
         }
@@ -145,6 +154,7 @@ class Heatmap extends Component {
             .title("")
             .subtitle("")
             .legendLabel("Count")
+            .legendScaleTicks(legendTicks)
             .width(width)
             .xAxisScale([data.columns[0], data.columns[data.columns.length - 1]])
             .xAxisScaleTicks(ticks)
@@ -277,8 +287,12 @@ class Heatmap extends Component {
     }
 
     handleEnhanceColors(){
-      this.setState({enhanceColors: !this.state.enhanceColors})
-      this.fetchData()
+      this.setState(
+          {enhanceColors: !this.state.enhanceColors},
+          function() {
+              this.drawHeatmap()
+          }
+        )
     }
 
     render() {
@@ -318,17 +332,21 @@ class Heatmap extends Component {
                             selection
                             labeled
                         />
-                      { /*<Button animated='vertical' color='red' onClick={this.handleSettingsOpen}>
+                        { /*<Button animated='vertical' color='red' onClick={this.handleSettingsOpen}>
                             <Button.Content hidden>Settings</Button.Content>
                             <Button.Content visible>
                                 <Icon name='cogs' />
                             </Button.Content>
                         </Button>*/}
-                      <Button toggle active={this.state.enhanceColors} onClick={this.handleEnhanceColors} style={{marginLeft: '8px'}}>
-                        <Button.Content visible>
-                          Enhance Colors
-                        </Button.Content>
-                      </Button>
+                        <Label pointing='right' color='red' size='large' style={styles.enhanceLabel}>
+                            Enhanced
+                        </Label>
+                        <Checkbox
+                            toggle
+                            checked={this.state.enhanceColors}
+                            onClick={this.handleEnhanceColors}
+                            style={styles.enhanceToggle}
+                        />
                     </Container>
                     <Divider />
                     <div
